@@ -33,13 +33,13 @@ streamlit_style = """
         }
 
         h1 {
-            color: var(--accent-color);
+            color: white;
             font-weight: 700;
             margin-bottom: 1.5rem;
         }
 
         h2 {
-            color: var(--text-color);
+            color: white;
             font-size: 1.85rem;
             font-weight: 600;
             margin-bottom: 1rem;
