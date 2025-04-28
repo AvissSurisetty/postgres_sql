@@ -39,7 +39,7 @@ streamlit_style = """
         }
 
         h2 {
-            color: white;
+            color: var(--text-color);
             font-size: 1.85rem;
             font-weight: 600;
             margin-bottom: 1rem;
