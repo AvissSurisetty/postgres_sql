@@ -14,7 +14,7 @@ st.set_page_config(page_title=PAGE_TITLE, page_icon=PAGE_ICON)
 streamlit_style = """
     <style>
         :root {
-            --primary-color: #101828;  /* White background */
+            --primary-color: #f9fafb;  /* White background */
             --text-color: #101828;      /* Dark text */
             --accent-color: #6366f1;    /* Vibrant purple */
             --gray-color: #d1d5db;
@@ -37,11 +37,12 @@ streamlit_style = """
             font-weight: 700;
             margin-bottom: 1.5rem;
         }
-        h2{
-           color: var(--text-color);
-           font-size: 1.85rem;
-           font-weight: 600;
-           margin-bottom: 1rem;
+
+        h2 {
+            color: var(--text-color);
+            font-size: 1.85rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
         }
 
         .stTextInput > label {
@@ -54,7 +55,7 @@ streamlit_style = """
 
         .stButton>button {
             background-color: var(--accent-color);
-            color: #000000; /* Changed the color of the text to black */
+            color: #ffffff;
             font-weight: 500;
             border: none;
             border-radius: 0.5rem;
@@ -66,11 +67,12 @@ streamlit_style = """
 
         .stButton>button:hover {
             background-color: var(--button-hover-color);
-            color: white;
+            color: #ffffff;
         }
-        .stButton>button:active{
-             box-shadow: 0 0.05rem 0.1rem rgba(0, 0, 0, 0.2);
-             transform: translateY(1px);
+
+        .stButton>button:active {
+            box-shadow: 0 0.05rem 0.1rem rgba(0, 0, 0, 0.2);
+            transform: translateY(1px);
         }
 
         .stTextInput>div>div>input {
@@ -87,6 +89,7 @@ streamlit_style = """
             box-shadow: 0 0 0 0.125rem rgba(99, 102, 241, 0.25);
             outline: none;
         }
+
         .stNumberInput>div>div>input {
             background-color: #ffffff;
             border: 0.0625rem solid var(--gray-color);
@@ -110,6 +113,7 @@ streamlit_style = """
             margin-top: 1rem;
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.2);
         }
+
         .dataframe thead th {
             background-color: #efefef;
             color: var(--text-color);
@@ -118,9 +122,10 @@ streamlit_style = """
             font-weight: 600;
             border-bottom: 0.0625rem solid var(--gray-color);
         }
-        .dataframe tbody td{
-           padding: 0.75rem;
-           border-bottom: 0.0625rem solid var(--gray-color);
+
+        .dataframe tbody td {
+            padding: 0.75rem;
+            border-bottom: 0.0625rem solid var(--gray-color);
         }
 
         .dataframe tbody tr:last-child td {
@@ -144,12 +149,12 @@ streamlit_style = """
             padding: 0 1rem 1rem 1rem;
             color: var(--gray-color);
         }
-        .css-16idsb6 h2{
+
+        .css-16idsb6 h2 {
             color: var(--accent-color);
             font-size: 1.5rem;
             font-weight: 600;
         }
-
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 """
@@ -158,14 +163,14 @@ st.markdown(streamlit_style, unsafe_allow_html=True)
 
 # --- Database Connection ---
 @st.cache_resource
-def get_connection(host, port, dbname, user, password):
+def get_connection():
     try:
         conn = psycopg2.connect(
-            host=host,
-            port=port,
-            dbname=dbname,
-            user=user,
-            password=password,
+            host=st.session_state.db_host,
+            port=st.session_state.db_port,
+            dbname=st.session_state.db_name,
+            user=st.session_state.db_user,
+            password=st.session_state.db_password,
         )
         return conn
     except Exception as e:
@@ -177,26 +182,38 @@ def get_connection(host, port, dbname, user, password):
 def main():
     st.title("PostgreSQL Query Viewer")
 
+    # Initialize session state for database connection details
+    if "db_host" not in st.session_state:
+        st.session_state.db_host = "dpg-d07hkmali9vc73fa3qn0-a"
+    if "db_port" not in st.session_state:
+        st.session_state.db_port = "5432"
+    if "db_name" not in st.session_state:
+        st.session_state.db_name = "postgres_sql_ssho"
+    if "db_user" not in st.session_state:
+        st.session_state.db_user = "postgres_sql_ssho_user"
+    if "db_password" not in st.session_state:
+        st.session_state.db_password = "Bwb8qeksLnKSjCRr7gMbpBmRaJOHtcS7"
+
     # Database connection details
     with st.expander("Database Connection Details"):
-        db_host = st.text_input("Host", value="localhost")
-        db_port = st.text_input("Port", value="5432")
-        db_name = st.text_input("Database Name")
-        db_user = st.text_input("User")
-        db_password = st.text_input("Password", type="password")
+        st.session_state.db_host = st.text_input("Host", value=st.session_state.db_host)
+        st.session_state.db_port = st.text_input("Port", value=st.session_state.db_port)
+        st.session_state.db_name = st.text_input("Database Name", value=st.session_state.db_name)
+        st.session_state.db_user = st.text_input("User", value=st.session_state.db_user)
+        st.session_state.db_password = st.text_input("Password", type="password", value=st.session_state.db_password)
 
     # Query and show results
     st.subheader("Flight Delay Analysis")
     query = st.text_input(
         "Enter your SQL query:",
         """SELECT carrier_name, COUNT(*) AS total_delays
-    FROM Flights
-    WHERE arr_del15 = TRUE
-    GROUP BY carrier_name
-    ORDER BY total_delays DESC;""",
+FROM Flights
+WHERE arr_del15 = TRUE
+GROUP BY carrier_name
+ORDER BY total_delays DESC;""",
     )
     if st.button("Run Query"):
-        conn = get_connection(db_host, db_port, db_name, db_user, db_password)
+        conn = get_connection()
         if conn:
             cursor = None
             try:
@@ -216,8 +233,7 @@ def main():
             finally:
                 if cursor:
                     cursor.close()
-                conn.close()
-
+                conn.close()  # Close the connection after all queries
 
 if __name__ == "__main__":
     main()
