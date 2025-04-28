@@ -162,20 +162,46 @@ st.markdown(streamlit_style, unsafe_allow_html=True)
 
 
 # --- Database Connection ---
-@st.cache_resource
-def get_connection():
+def init_connection():
     try:
-        conn = psycopg2.connect(
+        return psycopg2.connect(
             host=st.session_state.db_host,
             port=st.session_state.db_port,
             dbname=st.session_state.db_name,
             user=st.session_state.db_user,
             password=st.session_state.db_password,
         )
-        return conn
     except Exception as e:
         st.error(f"Error connecting to the database: {e}")
         return None
+
+
+# Function to execute queries with proper connection handling
+def run_query(query):
+    conn = init_connection()
+    if not conn:
+        return None
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute(query)
+        
+        # Check if the query returns data
+        if cursor.description:
+            colnames = [description[0] for description in cursor.description]
+            results = cursor.fetchall()
+            df = pd.DataFrame(results, columns=colnames)
+            conn.commit()
+            return df
+        else:
+            # For INSERT, UPDATE, DELETE queries
+            conn.commit()
+            return "Query executed successfully. No data to return."
+    except Exception as e:
+        conn.rollback()
+        return f"Error executing query: {e}"
+    finally:
+        conn.close()
 
 
 # --- Main App ---
@@ -202,6 +228,15 @@ def main():
         st.session_state.db_user = st.text_input("User", value=st.session_state.db_user)
         st.session_state.db_password = st.text_input("Password", type="password", value=st.session_state.db_password)
 
+    # Add a button to test connection
+    if st.button("Test Connection"):
+        conn = init_connection()
+        if conn:
+            st.success("Connection successful!")
+            conn.close()
+        else:
+            st.error("Failed to connect to the database. Please check your connection details.")
+
     # Query and show results
     st.subheader("Flight Delay Analysis")
     query = st.text_input(
@@ -213,30 +248,14 @@ GROUP BY carrier_name
 ORDER BY total_delays DESC;""",
     )
     if st.button("Run Query"):
-        conn = get_connection()
-        if conn:
-            cursor = None  # Declare cursor outside the try block
-            try:
-                cursor = conn.cursor()
-                cursor.execute(query)
-                results = cursor.fetchall()
-                if cursor.description:
-                    colnames = [description[0] for description in cursor.description]
-                    st.write("Query Results:")
-                    df = pd.DataFrame(results, columns=colnames)
-                    st.dataframe(df)
-                else:
-                    st.write("Query executed successfully, but no data was returned.")
-                conn.commit()
-            except Exception as e:
-                st.error(f"Error executing query: {e}")
-                conn.rollback()
-            finally:
-                if cursor:
-                    cursor.close()
-                conn.close()
+        result = run_query(query)
+        if isinstance(result, pd.DataFrame):
+            st.write("Query Results:")
+            st.dataframe(result)
+        elif isinstance(result, str) and result.startswith("Error"):
+            st.error(result)
         else:
-            st.error("Failed to connect to the database.  Please check your connection details.")
+            st.success(result)
 
 
 if __name__ == "__main__":
