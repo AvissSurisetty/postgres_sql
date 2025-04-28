@@ -215,9 +215,8 @@ ORDER BY total_delays DESC;""",
     if st.button("Run Query"):
         conn = get_connection()
         if conn:
-            cursor = None
             try:
-                cursor = conn.cursor()
+                cursor = conn.cursor()  # Get cursor here
                 cursor.execute(query)
                 results = cursor.fetchall()
                 if cursor.description:
@@ -227,6 +226,7 @@ ORDER BY total_delays DESC;""",
                     st.dataframe(df)
                 else:
                     st.write("Query executed successfully, but no data was returned.")
+                conn.commit() # Commit the transaction
             except Exception as e:
                 st.error(f"Error executing query: {e}")
                 conn.rollback()
@@ -234,6 +234,9 @@ ORDER BY total_delays DESC;""",
                 if cursor:
                     cursor.close()
                 conn.close()  # Close the connection after all queries
+        else:
+            st.error("Failed to connect to the database.  Please check your connection details.")
+
 
 if __name__ == "__main__":
     main()
