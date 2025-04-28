@@ -14,7 +14,7 @@ st.set_page_config(page_title=PAGE_TITLE, page_icon=PAGE_ICON)
 streamlit_style = """
     <style>
         :root {
-            --primary-color: #f9fafb;  /* White background */
+            --primary-color: #101828;  /* White background */
             --text-color: #101828;      /* Dark text */
             --accent-color: #6366f1;    /* Vibrant purple */
             --gray-color: #d1d5db;
